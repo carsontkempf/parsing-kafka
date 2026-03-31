@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -28,8 +29,12 @@ type Result struct {
 }
 
 func main() {
+	exePath, _ := os.Executable()
+	exeDir := filepath.Dir(exePath)
+	defaultOutput := filepath.Join(exeDir, "output.csv")
+
 	inputFile := flag.String("input", "C:/Users/p3293326/OneDrive - Charter Communications/Documents/Apps/Notepad++Portable/Notes/kafka.txt", "Input TXT file")
-	outputFile := flag.String("output", "output.csv", "Output CSV file")
+	outputFile := flag.String("output", defaultOutput, "Output CSV file")
 	clusterID := flag.String("cluster", "", "Kafka Cluster ID")
 	flag.Parse()
 
