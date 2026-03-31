@@ -22,7 +22,17 @@ type Topic struct {
 	} `json:"partitions"`
 }
 
+type Cluster struct {
+	ClusterId   string `json:"clusterId"`
+	DisplayName string `json:"displayName"`
+}
+
+type ClusterResponse struct {
+	Clusters []Cluster `json:"clusters"`
+}
+
 type Result struct {
+	ClusterName     string
 	Name            string
 	PartitionsCount int
 	LastProduced    string
@@ -42,12 +52,7 @@ func main() {
 
 	inputFile := flag.String("input", "C:/Users/p3293326/OneDrive - Charter Communications/Documents/Apps/Notepad++Portable/Notes/kafka.txt", "Input TXT file")
 	outputFile := flag.String("output", defaultOutput, "Output CSV file")
-	clusterID := flag.String("cluster", "", "Kafka Cluster ID")
 	flag.Parse()
-
-	if *clusterID == "" {
-		log.Fatal("Usage: program -cluster <cluster_id> [-output <out.csv>]")
-	}
 
 	log.Printf("Opening input file: %s", *inputFile)
 	file, err := os.Open(*inputFile)
@@ -64,7 +69,26 @@ func main() {
 	defer out.Close()
 
 	writer := csv.NewWriter(out)
-	writer.Write([]string{"Topic Name", "Partitions", "Last Produced"})
+	writer.Write([]string{"Cluster Name", "Topic Name", "Partitions", "Last Produced"})
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	log.Println("Fetching cluster IDs...")
+	req, _ := http.NewRequest("GET", "http://198.19.144.5:9021/2.0/clusters/kafka/display/CLUSTER_MANAGEMENT", nil)
+	req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
+	req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("Failed to fetch clusters:", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	var clusterResp ClusterResponse
+	if err := json.Unmarshal(body, &clusterResp); err != nil {
+		log.Fatal("Failed to parse clusters:", err)
+	}
+	log.Printf("Found %d clusters", len(clusterResp.Clusters))
 
 	dec := json.NewDecoder(file)
 	_, err = dec.Token()
@@ -72,47 +96,50 @@ func main() {
 		log.Fatal("Error reading JSON array start:", err)
 	}
 
-	jobs := make(chan Topic, 1000)
+	type Job struct {
+		Topic   Topic
+		Cluster Cluster
+	}
+
+	jobs := make(chan Job, 1000)
 	results := make(chan Result, 1000)
 	var wg sync.WaitGroup
-
-	client := &http.Client{Timeout: 10 * time.Second}
 
 	log.Println("Starting 50 concurrent HTTP workers...")
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			for t := range jobs {
-				log.Printf("[Worker %d] Fetching lastProduceTime for topic: %s", workerID, t.Name)
-				req, _ := http.NewRequest("GET", fmt.Sprintf("http://198.19.144.5:9021/2.0/kafka/%s/topics/%s/lastProduceTime", *clusterID, t.Name), nil)
+			for j := range jobs {
+				log.Printf("[Worker %d] Fetching lastProduceTime for topic: %s on cluster: %s", workerID, j.Topic.Name, j.Cluster.DisplayName)
+				req, _ := http.NewRequest("GET", fmt.Sprintf("http://198.19.144.5:9021/2.0/kafka/%s/topics/%s/lastProduceTime", j.Cluster.ClusterId, j.Topic.Name), nil)
 				req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
 				req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
 
 				resp, err := client.Do(req)
 				lastProduced := ""
 				if err != nil {
-					log.Printf("[Worker %d] Error fetching topic %s: %v", workerID, t.Name, err)
+					log.Printf("[Worker %d] Error fetching topic %s on cluster %s: %v", workerID, j.Topic.Name, j.Cluster.DisplayName, err)
 				} else {
 					body, _ := io.ReadAll(resp.Body)
 					val := string(body)
 					if val != "-1" && val != "" {
 						lastProduced = val
 					} else {
-						log.Printf("[Worker %d] Topic %s returned blank or -1", workerID, t.Name)
+						log.Printf("[Worker %d] Topic %s on %s returned blank or -1", workerID, j.Topic.Name, j.Cluster.DisplayName)
 					}
 					resp.Body.Close()
 				}
 
 				results <- Result{
-					Name:            t.Name,
-					PartitionsCount: len(t.Partitions),
+					ClusterName:     j.Cluster.DisplayName,
+					Name:            j.Topic.Name,
+					PartitionsCount: len(j.Topic.Partitions),
 					LastProduced:    lastProduced,
 				}
 			}
 		}(i)
 	}
-
 	go func() {
 		topicCount := 0
 		for dec.More() {
@@ -122,10 +149,12 @@ func main() {
 				log.Printf("Error decoding topic object: %v", err)
 				continue
 			}
-			jobs <- t
+			for _, c := range clusterResp.Clusters {
+				jobs <- Job{Topic: t, Cluster: c}
+			}
 			topicCount++
 			if topicCount%1000 == 0 {
-				log.Printf("Queued %d topics for processing...", topicCount)
+				log.Printf("Queued %d topics across %d clusters for processing...", topicCount, len(clusterResp.Clusters))
 			}
 		}
 		log.Printf("Finished queuing all %d topics. Waiting for workers...", topicCount)
@@ -137,7 +166,7 @@ func main() {
 
 	resultCount := 0
 	for r := range results {
-		writer.Write([]string{r.Name, strconv.Itoa(r.PartitionsCount), r.LastProduced})
+		writer.Write([]string{r.ClusterName, r.Name, strconv.Itoa(r.PartitionsCount), r.LastProduced})
 		resultCount++
 	}
 	writer.Flush()
