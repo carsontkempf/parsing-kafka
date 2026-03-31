@@ -1,0 +1,355 @@
+   {
+        "name": "BPUAA",
+        "internal": false,
+        "partitions": [
+            {
+                "partition": 0,
+                "leader": {
+                    "id": 3,
+                    "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 4,
+                        "host": "kafka-bkr-05-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 10,
+                        "host": "kafka-bkr-11-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 4,
+                        "host": "kafka-bkr-05-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 10,
+                        "host": "kafka-bkr-11-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 1,
+                "leader": {
+                    "id": 3,
+                    "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 6,
+                        "host": "kafka-bkr-07-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 8,
+                        "host": "kafka-bkr-09-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 6,
+                        "host": "kafka-bkr-07-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 8,
+                        "host": "kafka-bkr-09-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 2,
+                "leader": {
+                    "id": 2,
+                    "host": "kafka-bkr-03-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 2,
+                        "host": "kafka-bkr-03-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 7,
+                        "host": "kafka-bkr-08-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 2,
+                        "host": "kafka-bkr-03-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 7,
+                        "host": "kafka-bkr-08-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 3,
+                "leader": {
+                    "id": 3,
+                    "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 9,
+                        "host": "kafka-bkr-10-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 0,
+                        "host": "kafka-bkr-01-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 0,
+                        "host": "kafka-bkr-01-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 9,
+                        "host": "kafka-bkr-10-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 4,
+                "leader": {
+                    "id": 0,
+                    "host": "kafka-bkr-01-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 0,
+                        "host": "kafka-bkr-01-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 1,
+                        "host": "kafka-bkr-02-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 0,
+                        "host": "kafka-bkr-01-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 1,
+                        "host": "kafka-bkr-02-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 5,
+                "leader": {
+                    "id": 3,
+                    "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 4,
+                        "host": "kafka-bkr-05-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 5,
+                        "host": "kafka-bkr-06-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 4,
+                        "host": "kafka-bkr-05-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 5,
+                        "host": "kafka-bkr-06-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
+                "partition": 6,
+                "leader": {
+                    "id": 3,
+                    "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                    "port": 9092,
+                    "rack": null
+                },
+                "replicas": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 6,
+                        "host": "kafka-bkr-07-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 10,
+                        "host": "kafka-bkr-11-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ],
+                "observers": [],
+                "isr": [
+                    {
+                        "id": 3,
+                        "host": "kafka-bkr-04-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 10,
+                        "host": "kafka-bkr-11-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    },
+                    {
+                        "id": 6,
+                        "host": "kafka-bkr-07-pvdcco.corp.chartercom.com",
+                        "port": 9092,
+                        "rack": null
+                    }
+                ]
+            },
+            {
