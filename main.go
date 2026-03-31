@@ -61,21 +61,32 @@ func main() {
 	var file *os.File
 	var foundPath string
 	for _, p := range possiblePaths {
-		f, err := os.Open(p)
-		if err == nil {
-			file = f
-			foundPath = p
-			break
+		info, err := os.Stat(p)
+		if err == nil && !info.IsDir() {
+			f, err := os.Open(p)
+			if err == nil {
+				file = f
+				foundPath = p
+				break
+			}
 		}
 	}
 
 	if file == nil {
-		fmt.Printf("Could not automatically find kafka.txt.\nPlease paste the full, exact path to kafka.txt:\n> ")
+		fmt.Printf("Could not automatically find kafka.txt.\nPlease paste the full, exact path to kafka.txt (must be the file, not a folder):\n> ")
 		reader := bufio.NewReader(os.Stdin)
 		inputPath, _ := reader.ReadString('\n')
 		inputPath = strings.TrimSpace(inputPath)
 		inputPath = strings.Trim(inputPath, "\"")
 		inputPath = strings.Trim(inputPath, "'")
+
+		info, err := os.Stat(inputPath)
+		if err != nil || info.IsDir() {
+			log.Printf("Failed to open path %s or it is a directory: %v", inputPath, err)
+			fmt.Printf("\nError: The path provided does not exist or is a folder, not a file.\nPress Enter to exit...")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+			os.Exit(1)
+		}
 
 		f, err := os.Open(inputPath)
 		if err != nil {
@@ -109,21 +120,27 @@ func main() {
 	req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal("Failed to fetch clusters:", err)
+		fmt.Printf("\nFATAL ERROR: Failed to fetch clusters: %v\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
 	}
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 
 	var clusterResp ClusterResponse
 	if err := json.Unmarshal(body, &clusterResp); err != nil {
-		log.Fatal("Failed to parse clusters:", err)
+		fmt.Printf("\nFATAL ERROR: Failed to parse clusters: %v\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
 	}
 	log.Printf("Found %d clusters", len(clusterResp.Clusters))
 
 	dec := json.NewDecoder(file)
 	_, err = dec.Token()
 	if err != nil {
-		log.Fatal("Error reading JSON array start:", err)
+		fmt.Printf("\nFATAL ERROR: Error reading JSON file: %v\nCheck if the file is a valid JSON array.\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
 	}
 
 	type Job struct {
