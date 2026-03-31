@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -48,22 +47,37 @@ func main() {
 	}
 	defer logFile.Close()
 
-	defaultOutput := filepath.Join(exeDir, "output.csv")
-	defaultInput := filepath.Join(exeDir, "kafka.txt")
+	outputFile := filepath.Join(exeDir, "output.csv")
 
-	inputFile := flag.String("input", defaultInput, "Input TXT file")
-	outputFile := flag.String("output", defaultOutput, "Output CSV file")
-	flag.Parse()
+	possiblePaths := []string{
+		filepath.Join(exeDir, "kafka.txt"),
+		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Downloads\\parsing-kafka-main\\kafka.txt",
+		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Downloads\\parsing-kafka-main\\parsing-kafka-main\\kafka.txt",
+		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Documents\\Apps\\Notepad++Portable\\Notes\\kafka.txt",
+		"C:\\Users\\p3293326\\Downloads\\parsing-kafka-main\\kafka.txt",
+		"C:\\Users\\p3293326\\Downloads\\parsing-kafka-main\\parsing-kafka-main\\kafka.txt",
+	}
 
-	log.Printf("Opening input file: %s", *inputFile)
-	file, err := os.Open(*inputFile)
-	if err != nil {
-		log.Fatal(err)
+	var file *os.File
+	var foundPath string
+	for _, p := range possiblePaths {
+		f, err := os.Open(p)
+		if err == nil {
+			file = f
+			foundPath = p
+			break
+		}
+	}
+
+	if file == nil {
+		log.Fatalf("Could not find kafka.txt in any of the expected locations.")
 	}
 	defer file.Close()
 
-	log.Printf("Creating output file: %s", *outputFile)
-	out, err := os.Create(*outputFile)
+	log.Printf("Successfully opened input file: %s", foundPath)
+
+	log.Printf("Creating output file: %s", outputFile)
+	out, err := os.Create(outputFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -171,5 +185,5 @@ func main() {
 		resultCount++
 	}
 	writer.Flush()
-	log.Printf("Successfully wrote %d records to %s", resultCount, *outputFile)
+	log.Printf("Successfully wrote %d records to %s", resultCount, outputFile)
 }
