@@ -31,6 +31,13 @@ type Result struct {
 func main() {
 	exePath, _ := os.Executable()
 	exeDir := filepath.Dir(exePath)
+
+	logFile, err := os.OpenFile(filepath.Join(exeDir, "execution.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		log.SetOutput(logFile)
+	}
+	defer logFile.Close()
+
 	defaultOutput := filepath.Join(exeDir, "output.csv")
 
 	inputFile := flag.String("input", "C:/Users/p3293326/OneDrive - Charter Communications/Documents/Apps/Notepad++Portable/Notes/kafka.txt", "Input TXT file")
