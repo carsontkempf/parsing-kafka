@@ -49,8 +49,9 @@ func main() {
 	defer logFile.Close()
 
 	defaultOutput := filepath.Join(exeDir, "output.csv")
+	defaultInput := filepath.Join(exeDir, "kafka.txt")
 
-	inputFile := flag.String("input", "C:/Users/p3293326/OneDrive - Charter Communications/Documents/Apps/Notepad++Portable/Notes/kafka.txt", "Input TXT file")
+	inputFile := flag.String("input", defaultInput, "Input TXT file")
 	outputFile := flag.String("output", defaultOutput, "Output CSV file")
 	flag.Parse()
 
