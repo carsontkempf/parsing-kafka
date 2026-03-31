@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,13 +51,11 @@ func main() {
 
 	outputFile := filepath.Join(exeDir, "output.csv")
 
+	cwd, _ := os.Getwd()
 	possiblePaths := []string{
+		"kafka.txt",
 		filepath.Join(exeDir, "kafka.txt"),
-		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Downloads\\parsing-kafka-main\\kafka.txt",
-		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Downloads\\parsing-kafka-main\\parsing-kafka-main\\kafka.txt",
-		"C:\\Users\\p3293326\\OneDrive - Charter Communications\\Documents\\Apps\\Notepad++Portable\\Notes\\kafka.txt",
-		"C:\\Users\\p3293326\\Downloads\\parsing-kafka-main\\kafka.txt",
-		"C:\\Users\\p3293326\\Downloads\\parsing-kafka-main\\parsing-kafka-main\\kafka.txt",
+		filepath.Join(cwd, "kafka.txt"),
 	}
 
 	var file *os.File
@@ -70,7 +70,22 @@ func main() {
 	}
 
 	if file == nil {
-		log.Fatalf("Could not find kafka.txt in any of the expected locations.")
+		fmt.Printf("Could not automatically find kafka.txt.\nPlease paste the full, exact path to kafka.txt:\n> ")
+		reader := bufio.NewReader(os.Stdin)
+		inputPath, _ := reader.ReadString('\n')
+		inputPath = strings.TrimSpace(inputPath)
+		inputPath = strings.Trim(inputPath, "\"")
+		inputPath = strings.Trim(inputPath, "'")
+
+		f, err := os.Open(inputPath)
+		if err != nil {
+			log.Printf("Failed to open custom path %s: %v", inputPath, err)
+			fmt.Printf("Error: %v\nPress Enter to exit...", err)
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+			os.Exit(1)
+		}
+		file = f
+		foundPath = inputPath
 	}
 	defer file.Close()
 
@@ -186,4 +201,6 @@ func main() {
 	}
 	writer.Flush()
 	log.Printf("Successfully wrote %d records to %s", resultCount, outputFile)
+	fmt.Printf("\nDone! Wrote %d records to output.csv.\nPress Enter to exit...", resultCount)
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
