@@ -11,17 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
-
-type Topic struct {
-	Name       string `json:"name"`
-	Partitions []struct {
-		Partition int `json:"partition"`
-	} `json:"partitions"`
-}
 
 type Cluster struct {
 	ClusterId   string `json:"clusterId"`
@@ -30,6 +22,18 @@ type Cluster struct {
 
 type ClusterResponse struct {
 	Clusters []Cluster `json:"clusters"`
+}
+
+type Topic struct {
+	Name       string `json:"name"`
+	Partitions []struct {
+		Partition int `json:"partition"`
+	} `json:"partitions"`
+}
+
+type Job struct {
+	Topic   Topic
+	Cluster Cluster
 }
 
 type Result struct {
@@ -50,69 +54,20 @@ func main() {
 	defer logFile.Close()
 
 	outputFile := filepath.Join(exeDir, "output.csv")
-
-	cwd, _ := os.Getwd()
-	possiblePaths := []string{
-		"kafka.txt",
-		filepath.Join(exeDir, "kafka.txt"),
-		filepath.Join(cwd, "kafka.txt"),
-	}
-
-	var file *os.File
-	var foundPath string
-	for _, p := range possiblePaths {
-		info, err := os.Stat(p)
-		if err == nil && !info.IsDir() {
-			f, err := os.Open(p)
-			if err == nil {
-				file = f
-				foundPath = p
-				break
-			}
-		}
-	}
-
-	if file == nil {
-		fmt.Printf("Could not automatically find kafka.txt.\nPlease paste the full, exact path to kafka.txt (must be the file, not a folder):\n> ")
-		reader := bufio.NewReader(os.Stdin)
-		inputPath, _ := reader.ReadString('\n')
-		inputPath = strings.TrimSpace(inputPath)
-		inputPath = strings.Trim(inputPath, "\"")
-		inputPath = strings.Trim(inputPath, "'")
-
-		info, err := os.Stat(inputPath)
-		if err != nil || info.IsDir() {
-			log.Printf("Failed to open path %s or it is a directory: %v", inputPath, err)
-			fmt.Printf("\nError: The path provided does not exist or is a folder, not a file.\nPress Enter to exit...")
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-			os.Exit(1)
-		}
-
-		f, err := os.Open(inputPath)
-		if err != nil {
-			log.Printf("Failed to open custom path %s: %v", inputPath, err)
-			fmt.Printf("Error: %v\nPress Enter to exit...", err)
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-			os.Exit(1)
-		}
-		file = f
-		foundPath = inputPath
-	}
-	defer file.Close()
-
-	log.Printf("Successfully opened input file: %s", foundPath)
-
 	log.Printf("Creating output file: %s", outputFile)
+
 	out, err := os.Create(outputFile)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("\nFATAL ERROR: Could not create output file: %v\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
 	}
 	defer out.Close()
 
 	writer := csv.NewWriter(out)
 	writer.Write([]string{"Cluster Name", "Topic Name", "Partitions", "Last Produced"})
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 15 * time.Second}
 
 	log.Println("Fetching cluster IDs...")
 	req, _ := http.NewRequest("GET", "http://198.19.144.5:9021/2.0/clusters/kafka/display/CLUSTER_MANAGEMENT", nil)
@@ -135,21 +90,8 @@ func main() {
 	}
 	log.Printf("Found %d clusters", len(clusterResp.Clusters))
 
-	dec := json.NewDecoder(file)
-	_, err = dec.Token()
-	if err != nil {
-		fmt.Printf("\nFATAL ERROR: Error reading JSON file: %v\nCheck if the file is a valid JSON array.\nPress Enter to exit...", err)
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
-		os.Exit(1)
-	}
-
-	type Job struct {
-		Topic   Topic
-		Cluster Cluster
-	}
-
-	jobs := make(chan Job, 1000)
-	results := make(chan Result, 1000)
+	jobs := make(chan Job, 10000)
+	results := make(chan Result, 10000)
 	var wg sync.WaitGroup
 
 	log.Println("Starting 50 concurrent HTTP workers...")
@@ -187,24 +129,37 @@ func main() {
 			}
 		}(i)
 	}
+
 	go func() {
-		topicCount := 0
-		for dec.More() {
-			var t Topic
-			err := dec.Decode(&t)
+		totalTopics := 0
+		for _, c := range clusterResp.Clusters {
+			log.Printf("Fetching topics for cluster: %s (%s)", c.DisplayName, c.ClusterId)
+			req, _ := http.NewRequest("GET", fmt.Sprintf("http://198.19.144.5:9021/2.0/kafka/%s/topics?includeAuthorizedOperations=false", c.ClusterId), nil)
+			req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
+			req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
+
+			resp, err := client.Do(req)
 			if err != nil {
-				log.Printf("Error decoding topic object: %v", err)
+				log.Printf("Error fetching topics for cluster %s: %v", c.DisplayName, err)
 				continue
 			}
-			for _, c := range clusterResp.Clusters {
+
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			var topics []Topic
+			if err := json.Unmarshal(body, &topics); err != nil {
+				log.Printf("Error parsing topics for cluster %s: %v", c.DisplayName, err)
+				continue
+			}
+
+			for _, t := range topics {
 				jobs <- Job{Topic: t, Cluster: c}
+				totalTopics++
 			}
-			topicCount++
-			if topicCount%1000 == 0 {
-				log.Printf("Queued %d topics across %d clusters for processing...", topicCount, len(clusterResp.Clusters))
-			}
+			log.Printf("Queued %d topics for cluster %s", len(topics), c.DisplayName)
 		}
-		log.Printf("Finished queuing all %d topics. Waiting for workers...", topicCount)
+		log.Printf("Finished queuing all %d topics across %d clusters. Waiting for workers...", totalTopics, len(clusterResp.Clusters))
 		close(jobs)
 		wg.Wait()
 		log.Println("All workers finished. Closing results channel...")
@@ -217,6 +172,7 @@ func main() {
 		resultCount++
 	}
 	writer.Flush()
+
 	log.Printf("Successfully wrote %d records to %s", resultCount, outputFile)
 	fmt.Printf("\nDone! Wrote %d records to output.csv.\nPress Enter to exit...", resultCount)
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
