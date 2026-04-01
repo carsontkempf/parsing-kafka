@@ -1,0 +1,16 @@
+[
+  {
+    "name": "ncw",
+    "display": "NCW Environment",
+    "baseUrl": "http://198.19.144.5:9021",
+    "authHeader": "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=",
+    "cookieHeader": "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0"
+  },
+  {
+    "name": "nce",
+    "display": "NCE Environment",
+    "baseUrl": "http://YOUR_NCE_IP:9021",
+    "authHeader": "Basic YOUR_NCE_AUTH",
+    "cookieHeader": "JSESSIONID=YOUR_NCE_COOKIE"
+  }
+]
