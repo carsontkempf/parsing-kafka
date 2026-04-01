@@ -47,13 +47,27 @@ func main() {
 	exePath, _ := os.Executable()
 	exeDir := filepath.Dir(exePath)
 
-	logFile, err := os.OpenFile(filepath.Join(exeDir, "execution.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	configs, err := LoadConfig(filepath.Join(exeDir, "config.json"))
+	if err != nil {
+		fmt.Printf("\nFATAL ERROR: Could not load config.json: %v\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
+	}
+
+	selectedEnv, err := PromptEnvironmentSelection(os.Stdin, configs)
+	if err != nil {
+		fmt.Printf("\nFATAL ERROR: %v\nPress Enter to exit...", err)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		os.Exit(1)
+	}
+
+	logFile, err := os.OpenFile(filepath.Join(exeDir, fmt.Sprintf("%s_execution.log", selectedEnv.Name)), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		log.SetOutput(logFile)
 	}
 	defer logFile.Close()
 
-	outputFile := filepath.Join(exeDir, "output.csv")
+	outputFile := filepath.Join(exeDir, fmt.Sprintf("%sdata.csv", selectedEnv.Name))
 	log.Printf("Creating output file: %s", outputFile)
 
 	out, err := os.Create(outputFile)
@@ -70,9 +84,10 @@ func main() {
 	client := &http.Client{Timeout: 15 * time.Second}
 
 	log.Println("Fetching cluster IDs...")
-	req, _ := http.NewRequest("GET", "http://198.19.144.5:9021/2.0/clusters/kafka/display/CLUSTER_MANAGEMENT", nil)
-	req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
-	req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
+	reqUrl := fmt.Sprintf("%s/2.0/clusters/kafka/display/CLUSTER_MANAGEMENT", selectedEnv.BaseUrl)
+	req, _ := http.NewRequest("GET", reqUrl, nil)
+	req.Header.Set("Authorization", selectedEnv.AuthHeader)
+	req.Header.Set("Cookie", selectedEnv.CookieHeader)
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("\nFATAL ERROR: Failed to fetch clusters: %v\nPress Enter to exit...", err)
@@ -101,9 +116,10 @@ func main() {
 			defer wg.Done()
 			for j := range jobs {
 				log.Printf("[Worker %d] Fetching lastProduceTime for topic: %s on cluster: %s", workerID, j.Topic.Name, j.Cluster.DisplayName)
-				req, _ := http.NewRequest("GET", fmt.Sprintf("http://198.19.144.5:9021/2.0/kafka/%s/topics/%s/lastProduceTime", j.Cluster.ClusterId, j.Topic.Name), nil)
-				req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
-				req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
+				reqUrl := fmt.Sprintf("%s/2.0/kafka/%s/topics/%s/lastProduceTime", selectedEnv.BaseUrl, j.Cluster.ClusterId, j.Topic.Name)
+				req, _ := http.NewRequest("GET", reqUrl, nil)
+				req.Header.Set("Authorization", selectedEnv.AuthHeader)
+				req.Header.Set("Cookie", selectedEnv.CookieHeader)
 
 				resp, err := client.Do(req)
 				lastProduced := ""
@@ -134,9 +150,10 @@ func main() {
 		totalTopics := 0
 		for _, c := range clusterResp.Clusters {
 			log.Printf("Fetching topics for cluster: %s (%s)", c.DisplayName, c.ClusterId)
-			req, _ := http.NewRequest("GET", fmt.Sprintf("http://198.19.144.5:9021/2.0/kafka/%s/topics?includeAuthorizedOperations=false", c.ClusterId), nil)
-			req.Header.Set("Authorization", "Basic QVBPU0NVU0VSOm4wV1F0QWlyQVk=")
-			req.Header.Set("Cookie", "JSESSIONID=node01jtj7kg5pz9anjpy90cjz8htk9099.node0")
+			reqUrl := fmt.Sprintf("%s/2.0/kafka/%s/topics?includeAuthorizedOperations=false", selectedEnv.BaseUrl, c.ClusterId)
+			req, _ := http.NewRequest("GET", reqUrl, nil)
+			req.Header.Set("Authorization", selectedEnv.AuthHeader)
+			req.Header.Set("Cookie", selectedEnv.CookieHeader)
 
 			resp, err := client.Do(req)
 			if err != nil {
